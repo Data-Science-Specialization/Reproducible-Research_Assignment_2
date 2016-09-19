@@ -3,6 +3,5 @@ account: rpubs
 server: rpubs.com
 bundleId:
         https://api.rpubs.com/api/v1/document/130198/76371ae9935043158e6d643e25aed3e0
-url:
-        http://rpubs.com/publish/claim/130198/4839093dfbec49308c499fd99967c501
-when: 1448234588.60661
+url: http://rpubs.com/goverd/130198
+when: 1451230719.97891

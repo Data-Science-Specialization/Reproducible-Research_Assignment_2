@@ -14,6 +14,7 @@ The data is most complete starting from year 1996, thus the analysis was concent
 
 
 ```r
+suppressPackageStartupMessages(library(plyr))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(lubridate))
@@ -117,14 +118,18 @@ In order to extract economic impact data we have to convert the damage exponent 
 
 
 ```r
+# Create property DMG multiplier column with numerical values for property damage exponent
 subStormData$PROPDMGEXP<-factor(subStormData$PROPDMGEXP)
-subStormData$propDMGMult <- subStormData$PROPDMGEXP
-levels(subStormData$propDMGMult) <- c(1,1,1000000000,1000,1000000)
+subStormData$propDMGMult <- mapvalues(subStormData$PROPDMGEXP, 
+                                      c('','0','B','K','M'),
+                                      c(1, 1, 1000000000, 1000, 1000000))
 subStormData$propDMGMult<-as.integer(as.character(subStormData$propDMGMult))
 
+# Create crop DMG multiplier column with numerical values for crop damage exponent
 subStormData$CROPDMGEXP<-factor(subStormData$CROPDMGEXP)
-subStormData$cropDMGMult <- subStormData$CROPDMGEXP
-levels(subStormData$cropDMGMult) <- c(1,1000000000,1000,1000000)
+subStormData$cropDMGMult <- mapvalues(subStormData$CROPDMGEXP, 
+                                      c('','B','K','M'),
+                                      c(1, 1000000000, 1000, 1000000))
 subStormData$cropDMGMult<-as.integer(as.character(subStormData$cropDMGMult))
 
 subStormData <- mutate(subStormData, econDMG = PROPDMG*propDMGMult+CROPDMG*cropDMGMult)
@@ -152,7 +157,7 @@ ggplot(econImpact, aes(x = YEAR, y = eImpact/1000000000, fill = EVTYPE)) +
     ylab('Total economic damages in $B (property and crop combined)')
 ```
 
-![](PeerAssessment2_files/figure-html/unnamed-chunk-7-1.png) 
+![](PeerAssessment2_files/figure-html/unnamed-chunk-7-1.png)
 
 It is clear from this plot that in fact there are two years - 2005 and 2006 with economic damages close to $100B, which is way higher than any damages reported in previous years. This most likely implies the presence of outliers. To find these we first drill down the dataset concentrating on the year 2006 and 'FLOOD' EVTYPEs.
 
@@ -237,7 +242,7 @@ group_by(subStormData, STATE) %>% filter(EVTYPE=='HURRICANE' | EVTYPE=='STORM SU
 ## ..    ...         ...
 ```
 
-There are three states that suffered significant economic damages from these events: Massachusettes, Louisiana and Florida. All of these are costal state that have seen tremendous damages during Hurrican Katrina, thus they are most likely correct and therefore are kept in the dataset.
+There are three states that suffered significant economic damages from these events: Massachusettes, Louisiana and Florida. All of these are costal states that have seen tremendous damages during Hurrican Katrina, thus they are most likely correct and therefore are kept in the dataset.
 
 ##Results  
 
@@ -263,7 +268,7 @@ ggplot(econImpact, aes(x = YEAR, y = eImpact/1000000000, fill = EVTYPE)) +
     ylab('Total economic damages in $B (property and crop combined)')
 ```
 
-![](PeerAssessment2_files/figure-html/unnamed-chunk-12-1.png) 
+![](PeerAssessment2_files/figure-html/unnamed-chunk-12-1.png)
 
 The following table displays the number of times each one of the events has been in the top 3 between 1996 and 2011. It implies that floods, tornados, droughts and hurricanes are the worst events in terms of the economic impact in the USA. 
 
@@ -304,7 +309,7 @@ ggplot(healthImpact, aes(x = YEAR, y = hImpact, fill = EVTYPE)) +
     ylab('Combined number of fatalities & injuries')
 ```
 
-![](PeerAssessment2_files/figure-html/unnamed-chunk-14-1.png) 
+![](PeerAssessment2_files/figure-html/unnamed-chunk-14-1.png)
 
 The corresponding frequency table is shown below and implies that the worst contributors to injuries and deaths are tornados, thunderstorm wind, excessive heat and lightning.
 

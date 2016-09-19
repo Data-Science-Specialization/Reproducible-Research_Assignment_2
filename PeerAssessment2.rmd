@@ -22,6 +22,7 @@ The data is most complete starting from year 1996, thus the analysis was concent
 **Note**: The analysis is **required** to start from the CSV.BZ2 file, thus downloading the data was not coded in. We first must read in the data and convert it into dataframe tbl format from dplyr package.
 
 ```{r}
+suppressPackageStartupMessages(library(plyr))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(lubridate))
@@ -73,14 +74,18 @@ subStormData$EVTYPE <- gsub('WILD/FOREST FIRE','WILDFIRE',subStormData$EVTYPE, i
 In order to extract economic impact data we have to convert the damage exponent column from factor class into integer, substituting K, M, B, 0 and blank with 1000, 1000000, 1000000000, 1 and 1 respectively. Zero and blank are substituted with 1 since they imply no exponent. Finally derive a new column with total economic damage for every event summing up dollar damages to property and crops.  
 
 ```{r}
+# Create property DMG multiplier column with numerical values for property damage exponent
 subStormData$PROPDMGEXP<-factor(subStormData$PROPDMGEXP)
-subStormData$propDMGMult <- subStormData$PROPDMGEXP
-levels(subStormData$propDMGMult) <- c(1,1,1000000000,1000,1000000)
+subStormData$propDMGMult <- mapvalues(subStormData$PROPDMGEXP, 
+                                      c('','0','B','K','M'),
+                                      c(1, 1, 1000000000, 1000, 1000000))
 subStormData$propDMGMult<-as.integer(as.character(subStormData$propDMGMult))
 
+# Create crop DMG multiplier column with numerical values for crop damage exponent
 subStormData$CROPDMGEXP<-factor(subStormData$CROPDMGEXP)
-subStormData$cropDMGMult <- subStormData$CROPDMGEXP
-levels(subStormData$cropDMGMult) <- c(1,1000000000,1000,1000000)
+subStormData$cropDMGMult <- mapvalues(subStormData$CROPDMGEXP, 
+                                      c('','B','K','M'),
+                                      c(1, 1000000000, 1000, 1000000))
 subStormData$cropDMGMult<-as.integer(as.character(subStormData$cropDMGMult))
 
 subStormData <- mutate(subStormData, econDMG = PROPDMG*propDMGMult+CROPDMG*cropDMGMult)
@@ -94,6 +99,7 @@ econImpact <- group_by(subStormData, YEAR, EVTYPE) %>%
     arrange(YEAR, desc(eImpact)) %>%
     filter(eImpact > 0) %>%
     top_n(3)
+
 ggplot(econImpact, aes(x = YEAR, y = eImpact/1000000000, fill = EVTYPE)) + 
     geom_bar(stat = "identity") + 
     scale_x_continuous(breaks = seq(1996, 2012, 2)) + 
@@ -124,7 +130,7 @@ We investigate the Hurrican and Storm Surge events of 2005 in the same way.
 group_by(subStormData, STATE) %>% filter(EVTYPE=='HURRICANE' | EVTYPE=='STORM SURGE') %>% summarise(totDMG=sum(econDMG)) %>% arrange(desc(totDMG))
 ```  
 
-There are three states that suffered significant economic damages from these events: Massachusettes, Louisiana and Florida. All of these are costal state that have seen tremendous damages during Hurrican Katrina, thus they are most likely correct and therefore are kept in the dataset.
+There are three states that suffered significant economic damages from these events: Massachusettes, Louisiana and Florida. All of these are costal states that have seen tremendous damages during Hurrican Katrina, thus they are most likely correct and therefore are kept in the dataset.
 
 ##Results  
 
@@ -156,8 +162,6 @@ healthImpact <- group_by(subStormData, YEAR, EVTYPE) %>%
     arrange(YEAR, desc(hImpact)) %>%
     filter(hImpact > 0) %>%
     top_n(3)
-
-
 ggplot(healthImpact, aes(x = YEAR, y = hImpact, fill = EVTYPE)) + 
     geom_bar(stat = "identity") + 
     scale_x_continuous(breaks = seq(1996, 2012, 2)) + 
